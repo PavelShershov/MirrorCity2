@@ -1,0 +1,10 @@
+import bpy
+
+for image in bpy.data.images:
+    if image.source == 'FILE':
+        # Устанавливаем новый размер (например, 512x512)
+        image.scale(512, 512)
+        # Сохраняем с высоким сжатием JPEG
+        image.filepath_raw = image.filepath_raw.replace('.png', '.jpg')
+        image.file_format = 'JPEG'
+        image.save()
