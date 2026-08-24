@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Город отражений</title>
+
+  <!-- ▼▼▼ ПРЕДЗАГРУЗКА РЕСУРСОВ ▼▼▼ -->
+  <link rel="preload" as="fetch" href="AR/targets.mind" crossorigin="anonymous">
+  <link rel="preload" as="image" href="AR/grifon.png" crossorigin="anonymous">
+  <!-- ▲▲▲ ▲▲▲ ▲▲▲ ▲▲▲ ▲▲▲ ▲▲▲ ▲▲▲ ▲▲▲ -->
+
+  <script src="js/preload.js"></script>
+  <script src="js/aframe.min.js"></script>
+  <script src="js/mindar-image-aframe.prod.js"></script>
+  <script src="js/aframe-extras.min.js"></script>
+
+  <style>
+    .mindar-ui-overlay { display: none !important; }
+    body { margin: 0; overflow: hidden; touch-action: none; background: #000; }
+    .a-enter-vr { display: none !important; }
+    .a-orientation-modal { display: none !important; }
+
+    .clickable-griffon {
+      cursor: pointer;
+    }
+    
+    /* Индикатор загрузки */
+    #arLoading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      transition: opacity 0.3s ease;
+    }
+    
+    #arLoading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: #00d9ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      margin-top: 15px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Индикатор загрузки -->
+  <div id="arLoading">
+    <div class="spinner"></div>
+    <div class="loading-text">Загрузка AR...</div>
+  </div>
+
+  <a-scene
+    mindar-image="imageTargetSrc: AR/targets.mind; autoStart: true; uiLoading: false; uiScanning: false; uiError: false; warmupTolerance:1; missTolerance:1; filterMinCF:0.001; filterBeta:1500; maxTrack:1;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    cursor="rayOrigin: mouse; fuse: false;"
+  >
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="imageIndex: 0">
+      <a-entity
+        id="griffon-entity"
+        geometry="primitive: plane; width: 1; height: 1;"
+        material="src: AR/grifon.png; transparent: true; opacity: 1; side: double;"
+        position="0 0 0"
+        class="clickable-griffon"
+        raycaster
+      ></a-entity>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    // =======================================================
+    // БЫСТРАЯ ЗАГРУЗКА
+    // =======================================================
+    (async function() {
+      const arLoading = document.getElementById('arLoading');
+      
+      // Предзагрузка критических ресурсов
+      const resources = [
+        'AR/targets.mind',
+        'AR/grifon.png'
+      ];
+      
+      try {
+        await Promise.all(resources.map(url => fetch(url)));
+        console.log('[FAST] Resources preloaded');
+      } catch(err) {
+        console.warn('[FAST] Preload error:', err);
+      }
+      
+      // Скрыть индикатор через 1 сек (чтобы камера успела инициализироваться)
+      setTimeout(() => {
+        arLoading.classList.add('hidden');
+      }, 1000);
+    })();
+
+    // =======================================================
+    // 1. ВСЯ ЛОГИКА КАМЕРЫ
+    // =======================================================
+    (function() {
+      const scene = document.querySelector('a-scene');
+
+      function getMindARSystem() {
+        return scene.systems['mindar-image-system'] || null;
+      }
+
+      async function tryLockPortrait() {
+        if (!screen.orientation || !screen.orientation.lock) return;
+        try {
+          await screen.orientation.lock('portrait');
+          console.log('[AR] portrait lock success');
+        } catch(e) {
+          console.log('[AR] portrait lock not available', e);
+        }
+      }
+
+      function updateOrientationUI() {
+        const mode = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+        document.body.classList.remove('landscape','portrait');
+        document.body.classList.add(mode);
+        return mode;
+      }
+
+      let orientationResetTimer = null;
+      window.isOrientationChanging = false;
+
+      function restartMindARAfterOrientation() {
+        const arSys = getMindARSystem();
+        if (!arSys) return;
+        window.isOrientationChanging = true;
+        if (orientationResetTimer) clearTimeout(orientationResetTimer);
+        try {
+          arSys.stop();
+        } catch(e) {
+          console.warn('[AR] stop error after orientation', e);
+        }
+        orientationResetTimer = setTimeout(async () => {
+          try {
+            if (scene.renderer) scene.renderer.setSize(window.innerWidth, window.innerHeight);
+            if (scene.camera) {
+              scene.camera.aspect = window.innerWidth / window.innerHeight;
+              scene.camera.updateProjectionMatrix();
+            }
+            await arSys.start();
+            setTimeout(() => {
+              window.isOrientationChanging = false;
+            }, 500);
+          } catch(e) {
+            console.warn('[AR] restart error after orientation', e);
+            window.isOrientationChanging = false;
+          }
+        }, 500);
+      }
+
+      let lastLayoutMode = null;
+
+      function handleBrowserOrientationChange() {
+        const newMode = updateOrientationUI();
+        if (newMode !== lastLayoutMode) {
+          lastLayoutMode = newMode;
+          restartMindARAfterOrientation();
+        }
+      }
+
+      window.addEventListener('resize', handleBrowserOrientationChange);
+      window.addEventListener('orientationchange', handleBrowserOrientationChange);
+      document.addEventListener('DOMContentLoaded', () => tryLockPortrait());
+      window.addEventListener('load', () => tryLockPortrait());
+      lastLayoutMode = updateOrientationUI();
+
+      // =======================================================
+      // 2. НАСТРОЙКА РАЗМЕРА (cover)
+      // =======================================================
+
+      function setupCover() {
+        const el = document.getElementById('griffon-entity');
+        if (!el) return;
+
+        const img = new Image();
+        img.onload = function() {
+          const w = this.width;
+          const h = this.height;
+          const aspect = w / h;
+
+          let width, height;
+
+          if (aspect > 1) {
+            height = 1;
+            width = aspect;
+          } else if (aspect < 1) {
+            width = 1;
+            height = 1 / aspect;
+          } else {
+            width = 1;
+            height = 1;
+          }
+
+          el.setAttribute('geometry', `primitive: plane; width: ${width}; height: ${height};`);
+          console.log(`[AR] Cover: aspect=${aspect}, size=${width}x${height}`);
+        };
+        img.src = 'AR/grifon.png';
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(setupCover, 300);
+      });
+
+      // =======================================================
+      // 3. РУЧНАЯ КОРРЕКТИРОВКА ПОЗИЦИИ
+      // =======================================================
+
+      window.adjustPosition = function(dx, dy) {
+        const el = document.getElementById('griffon-entity');
+        if (!el) return;
+        const pos = el.getAttribute('position');
+        const [x, y, z] = pos.split(' ').map(Number);
+        el.setAttribute('position', `${x + dx} ${y + dy} 0`);
+        console.log(`[AR] Position adjusted to: ${x + dx} ${y + dy}`);
+      };
+
+      // =======================================================
+      // 4. ЛОГИКА ПЕРЕХОДА ПО КЛИКУ
+      // =======================================================
+
+      document.addEventListener('DOMContentLoaded', function() {
+        const el = document.getElementById('griffon-entity');
+        if (!el) {
+          console.warn('Элемент #griffon-entity не найден');
+          return;
+        }
+
+        el.addEventListener('click', function(e) {
+          e.stopPropagation();
+          console.log('[AR] Клик по изображению');
+          window.location.href = 'index2.html';
+        });
+
+        el.addEventListener('touchstart', function(e) {
+          e.stopPropagation();
+          console.log('[AR] Касание по изображению');
+          window.location.href = 'index2.html';
+        });
+
+        el.addEventListener('mouseenter', function() {
+          this.setAttribute('material', 'opacity', 0.8);
+        });
+        el.addEventListener('mouseleave', function() {
+          this.setAttribute('material', 'opacity', 1);
+        });
+      });
+
+    })();
+  </script>
+
+</body>
+</html>

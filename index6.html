@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Страница 6</title>
+
+  <script src="js/aframe.min.js"></script>
+  <script src="js/aframe-extras.min.js"></script>
+
+  <style>
+    @font-face {
+      font-family: 'Swift';
+      src: url('font/Swift.otf') format('opentype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Swift Light';
+      src: url('font/Swift Light Regular.otf') format('opentype');
+      font-weight: 300;
+      font-style: normal;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000;
+    }
+    #arScene {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+    }
+
+    .text-overlay {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      text-align: center;
+      color: #ffffff;
+      font-family: 'Swift Light', 'Swift', sans-serif;
+      font-size: 20px;
+      line-height: 1.5;
+      max-width: 90%;
+      pointer-events: none;
+      user-select: none;
+      padding: 0 10px;
+      
+      font-weight: bold;
+      
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+    }
+    
+    .text-overlay.right-aligned {
+      text-align: right;
+      left: auto;
+      right: 10%;
+      transform: none;
+      max-width: 40%;
+    }
+
+    .corner-icon {
+      position: fixed;
+      z-index: 20;
+      cursor: pointer;
+      pointer-events: auto;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s ease;
+      height: auto;
+      width: 44px;
+      opacity: 0.85;
+    }
+    .corner-icon:hover { transform: scale(1.08); }
+    .corner-icon:active { transform: scale(0.92); }
+    #backBtn { 
+      top: 10px;   /* ▼▼▼ ЧУТЬ ВЫШЕ (БЫЛО 24px) ▼▼▼ */
+      left: 24px;
+      right: auto;
+      bottom: auto;
+      width: 80px;
+    }
+    #repietBtn { 
+      bottom: 24px; 
+      left: 24px;
+      display: none;
+    }
+
+    .arrow-icon {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      cursor: pointer;
+      pointer-events: auto;
+      width: 100px;
+      height: auto;
+      opacity: 0.7;
+      transition: opacity 0.2s, transform 0.15s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .arrow-icon:hover { opacity: 1; }
+    .arrow-icon:active { transform: translateY(-50%) scale(0.92); }
+    #leftArrow { left: 10px; }
+    #rightArrow { right: 10px; }
+
+    @media (orientation: landscape) {
+      .text-overlay {
+        font-size: 20px;
+        top: 20px;
+      }
+    }
+
+    @media (orientation: portrait) {
+      .text-overlay {
+        font-size: 22px;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 95%;
+        max-width: 95%;
+        line-height: 1.35;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: normal;
+        text-align: center;
+        padding: 0 5px;
+      }
+      
+      .text-overlay.right-aligned {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: 95%;
+        max-width: 95%;
+        text-align: center;
+      }
+
+      #backBtn { 
+        top: 10px;
+        left: 10px;
+        right: auto;
+        bottom: auto;
+        width: 100px;
+      }
+      
+      #repietBtn { 
+        bottom: 10px; 
+        left: 10px;
+        width: 44px;
+      }
+
+      .arrow-icon {
+        width: 38px;
+        top: auto;
+        bottom: 100px;
+        transform: none;
+      }
+      #leftArrow { 
+        left: 10px; 
+        bottom: 100px;
+      }
+      #rightArrow { 
+        right: 10px; 
+        bottom: 100px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="textOverlay" class="text-overlay"></div>
+
+  <a-scene id="arScene"
+           embedded
+           renderer="antialias: true; colorManagement: true;"
+           vr-mode-ui="enabled: false"
+           device-orientation-permission-ui="enabled: false"
+           webxr="optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'layers'];"
+  >
+    <a-assets timeout="30000">
+      <img id="bgTexture" src="sostav/fon3.png" crossorigin="anonymous"></img>
+      <a-asset-item id="model3" src="models/3untitled.glb"></a-asset-item>
+      <a-asset-item id="model4" src="models/4untitled.glb"></a-asset-item>
+      <a-asset-item id="model5" src="models/5untitled.glb"></a-asset-item>
+      <a-asset-item id="model6" src="models/6untitled.glb"></a-asset-item>
+    </a-assets>
+
+    <a-plane
+      src="#bgTexture"
+      position="0 0 -15"
+      rotation="0 0 0"
+      width="120"
+      height="80"
+    ></a-plane>
+
+    <a-camera position="0 0 5" rotation="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity
+      id="modelContainer"
+      position="0 0 0"
+      scale="30 30 30"
+      rotation="0 0 0"
+    ></a-entity>
+  </a-scene>
+
+  <img id="backBtn" class="corner-icon" src="sostav/back.png" alt="Назад">
+  <img id="repietBtn" class="corner-icon" src="sostav/repiet.png" alt="Повтор">
+  <img id="leftArrow" class="arrow-icon" src="sostav/left.png" alt="Влево">
+  <img id="rightArrow" class="arrow-icon" src="sostav/right.png" alt="Вправо">
+
+  <script>
+    (function() {
+      const container = document.getElementById('modelContainer');
+      const textEl = document.getElementById('textOverlay');
+      
+      if (!container || !textEl) {
+        console.error('❌ Элементы не найдены!');
+        return;
+      }
+
+      const modelList = [
+        { path: 'models/3untitled.glb', rotation: '0 0 0', text: '90 тайлов, на каждом изображены каналы и дороги.<br>Вторая сторона каждого тайла - зеркальное отражение первой' },
+        { path: 'models/5untitled.glb', rotation: '0 90 0', text: '6 монет Гильдий,<br>по 3 монеты Гильдии<br>Лодочников/Извозчиков' },
+        { path: 'models/4untitled.glb', rotation: '0 0 0', text: '12 фишек Достопримечательностей<br>по 6 фишек на Гильдии' },
+        { path: 'models/6untitled.glb', rotation: '0 0 0', text: '8 тайлов случайных событий, 4 вида<br>Тайл с Иссакиевским собором' }
+      ];
+      
+      const firstModelIndex = 0;
+      const firstModelPosition = '0 -3 0';
+      const firstModelScale = '40 40 40';
+      
+      const secondModelIndex = 1;
+      const secondModelPosition = '0 -1 0';
+      const secondModelScale = '70 70 70';
+      
+      const thirdModelIndex = 2;
+      const thirdModelPosition = '-1 -3 0';
+      const thirdModelScale = '85 85 85';
+      
+      const fourthModelIndex = 3;
+      const fourthModelPosition = '-1 -3 0';
+      const fourthModelScale = '40 40 40';
+      
+      const firstModelScaleVertical = '18 18 18';
+      const secondModelScaleVertical = '35 35 35';
+      const thirdModelScaleVertical = '30 30 30';
+      const fourthModelScaleVertical = '12 12 12';
+      
+      const firstModelPositionVertical = '0 -1 0';
+      const secondModelPositionVertical = '0 0 0';
+      const thirdModelPositionVertical = '0 -2 0';
+      const fourthModelPositionVertical = '-0.5 -1 0';
+      
+      let currentIndex = 0;
+      let currentModel = null;
+      let isPortrait = window.innerHeight > window.innerWidth;
+
+      function updateText(index) {
+        textEl.innerHTML = modelList[index].text;
+        
+        if (index === thirdModelIndex) {
+          textEl.classList.add('right-aligned');
+        } else {
+          textEl.classList.remove('right-aligned');
+        }
+      }
+
+      function loadModel(index) {
+        const entry = modelList[index];
+        if (!entry) {
+          console.error('❌ Модель не найдена:', index);
+          return;
+        }
+
+        console.log('Loading model:', index, entry.path);
+
+        while (container.firstChild) {
+          container.removeChild(container.firstChild);
+        }
+
+        const newModel = document.createElement('a-entity');
+        newModel.setAttribute('gltf-model', entry.path);
+        
+        isPortrait = window.innerHeight > window.innerWidth;
+        
+        if (index === firstModelIndex) {
+          container.setAttribute('position', isPortrait ? firstModelPositionVertical : firstModelPosition);
+          container.setAttribute('scale', isPortrait ? firstModelScaleVertical : firstModelScale);
+        }
+        else if (index === secondModelIndex) {
+          container.setAttribute('position', isPortrait ? secondModelPositionVertical : secondModelPosition);
+          container.setAttribute('scale', isPortrait ? secondModelScaleVertical : secondModelScale);
+        }
+        else if (index === thirdModelIndex) {
+          container.setAttribute('position', isPortrait ? thirdModelPositionVertical : thirdModelPosition);
+          container.setAttribute('scale', isPortrait ? thirdModelScaleVertical : thirdModelScale);
+        }
+        else if (index === fourthModelIndex) {
+          container.setAttribute('position', isPortrait ? fourthModelPositionVertical : fourthModelPosition);
+          container.setAttribute('scale', isPortrait ? fourthModelScaleVertical : fourthModelScale);
+        }
+        else {
+          container.setAttribute('position', '0 0 0');
+          container.setAttribute('scale', isPortrait ? '15 15 15' : '30 30 30');
+        }
+        
+        container.appendChild(newModel);
+        container.setAttribute('rotation', entry.rotation);
+        currentModel = newModel;
+
+        newModel.addEventListener('model-loaded', function onLoad() {
+          newModel.removeEventListener('model-loaded', onLoad);
+          console.log('✅ Model loaded:', entry.path);
+          
+          const mesh = newModel.getObject3D('mesh');
+          if (mesh && mesh.animations && mesh.animations.length > 0) {
+            newModel.setAttribute('animation-mixer', 'clip: *; loop: true');
+            console.log('✅ Animation added');
+          }
+        });
+
+        newModel.addEventListener('model-error', function onError(err) {
+          console.error('❌ Model error:', entry.path, err);
+          textEl.innerHTML = 'Ошибка загрузки модели!';
+        });
+
+        updateText(index);
+      }
+
+      window.addEventListener('resize', function() {
+        console.log('Resize detected');
+        loadModel(currentIndex);
+      });
+
+      document.getElementById('backBtn').addEventListener('click', e => { 
+        e.stopPropagation(); 
+        window.location.href = 'index2.html'; 
+      });
+      
+      document.getElementById('repietBtn').addEventListener('click', e => {
+        e.stopPropagation();
+        if (currentModel) {
+          const mixer = currentModel.components['animation-mixer'];
+          if (mixer && mixer.mixer) {
+            mixer.mixer.stop();
+            setTimeout(() => mixer.mixer.play(), 100);
+          }
+        }
+      });
+      
+      document.getElementById('leftArrow').addEventListener('click', e => {
+        e.stopPropagation();
+        currentIndex = (currentIndex - 1 + modelList.length) % modelList.length;
+        loadModel(currentIndex);
+      });
+      
+      document.getElementById('rightArrow').addEventListener('click', e => {
+        e.stopPropagation();
+        currentIndex = (currentIndex + 1) % modelList.length;
+        loadModel(currentIndex);
+      });
+
+      console.log('Starting with model 0');
+      loadModel(0);
+    })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Меню</title>
+
+<script src="js/preload.js"></script>
+
+<style>
+
+* {
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+
+html, body {
+
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+
+}
+
+
+#bg {
+
+    position:fixed;
+    left:0;
+    top:0;
+
+    width:100%;
+    height:100%;
+
+    object-fit:cover;
+
+}
+
+
+
+/* изображение заголовка */
+
+#menuText {
+
+    position:fixed;
+
+    left:50%;
+
+    top:-20px;
+
+    transform:translateX(-50%);
+
+    width:65%;
+
+    height:auto;
+
+    object-fit:contain;
+
+    z-index:10;
+
+    pointer-events:none;
+
+}
+
+
+
+/* кнопки */
+
+.menu-btn {
+
+    position:fixed;
+
+    object-fit:contain;
+
+    z-index:2;
+
+    pointer-events:none;
+
+}
+
+
+
+/* зоны клика */
+
+.click-zone {
+
+    position:fixed;
+
+    z-index:5;
+
+}
+
+
+
+/* выход */
+
+.corner-icon {
+
+    position:fixed;
+
+    width:60px;
+    height:60px;
+
+    right:20px;
+    bottom:24px;
+
+    z-index:20;
+
+}
+
+
+
+/* ==========================
+   ГОРИЗОНТАЛЬНЫЙ ЭКРАН
+========================== */
+
+
+@media (orientation:landscape) {
+
+
+
+#menuText {
+
+    top:-75px;
+
+    width:55%;
+
+}
+
+
+
+
+#btn-l1 {
+
+    left:12%;
+
+    top:32%;
+
+    width:40%;
+
+    height:28%;
+
+}
+
+
+
+#btn-l2 {
+
+    left:12%;
+
+    top:67%;
+
+    width:40%;
+
+    height:28%;
+
+}
+
+
+
+#btn-r1 {
+
+    left:48%;
+
+    top:32%;
+
+    width:40%;
+
+    height:28%;
+
+}
+
+
+
+#btn-r2 {
+
+    left:48%;
+
+    top:67%;
+
+    width:40%;
+
+    height:28%;
+
+}
+
+
+
+
+#zone-l1 {
+
+    left:18%;
+
+    top:34%;
+
+    width:28%;
+
+    height:25%;
+
+}
+
+
+
+#zone-l2 {
+
+    left:18%;
+
+    top:69%;
+
+    width:28%;
+
+    height:25%;
+
+}
+
+
+
+#zone-r1 {
+
+    left:54%;
+
+    top:34%;
+
+    width:28%;
+
+    height:25%;
+
+}
+
+
+
+#zone-r2 {
+
+    left:54%;
+
+    top:69%;
+
+    width:28%;
+
+    height:25%;
+
+}
+
+
+
+}
+
+
+
+
+
+/* ==========================
+   ВЕРТИКАЛЬНЫЙ ЭКРАН
+========================== */
+
+
+@media (orientation:portrait) {
+
+
+
+#menuText {
+
+    top:-10px;
+
+    width:90%;
+
+}
+
+
+
+
+#btn-l1 {
+
+    left:10%;
+
+    top:18%;
+
+    width:80%;
+
+    height:14%;
+
+}
+
+
+
+#btn-r1 {
+
+    left:10%;
+
+    top:39%;
+
+    width:80%;
+
+    height:14%;
+
+}
+
+
+
+#btn-r2 {
+
+    left:10%;
+
+    top:60%;
+
+    width:80%;
+
+    height:14%;
+
+}
+
+
+
+#btn-l2 {
+
+    left:10%;
+
+    top:81%;
+
+    width:80%;
+
+    height:14%;
+
+}
+
+
+
+
+
+#zone-l1 {
+
+    left:15%;
+
+    top:20%;
+
+    width:70%;
+
+    height:10%;
+
+}
+
+
+
+#zone-r1 {
+
+    left:15%;
+
+    top:41%;
+
+    width:70%;
+
+    height:10%;
+
+}
+
+
+
+#zone-r2 {
+
+    left:15%;
+
+    top:62%;
+
+    width:70%;
+
+    height:10%;
+
+}
+
+
+
+#zone-l2 {
+
+    left:15%;
+
+    top:83%;
+
+    width:70%;
+
+    height:10%;
+
+}
+
+
+
+}
+
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<img id="bg" src="menu/fon.png">
+
+
+<img id="menuText" src="menu/text.png">
+
+
+
+<img id="btn-l1" class="menu-btn" src="menu/l1.png">
+
+<img id="btn-l2" class="menu-btn" src="menu/l2.png">
+
+<img id="btn-r1" class="menu-btn" src="menu/r1.png">
+
+<img id="btn-r2" class="menu-btn" src="menu/r2.png">
+
+
+
+<div class="click-zone" id="zone-l1"></div>
+
+<div class="click-zone" id="zone-l2"></div>
+
+<div class="click-zone" id="zone-r1"></div>
+
+<div class="click-zone" id="zone-r2"></div>
+
+
+
+<img id="exitBtn"
+     class="corner-icon"
+     src="menu/exit.png">
+
+
+
+<script>
+
+(function(){
+
+
+const pages = {
+
+    "zone-l1":"index3.html",
+
+    "zone-l2":"index5.html",
+
+    "zone-r1":"index6.html",
+
+    "zone-r2":"index4.html"
+
+};
+
+
+
+Object.keys(pages).forEach(function(id){
+
+
+    let btn=document.getElementById(id);
+
+
+    if(btn){
+
+
+        function open(e){
+
+            e.preventDefault();
+
+            e.stopPropagation();
+
+            window.location.href=pages[id];
+
+        }
+
+
+        btn.addEventListener("click",open);
+
+        btn.addEventListener("touchstart",open);
+
+
+    }
+
+
+});
+
+
+
+let exit=document.getElementById("exitBtn");
+
+
+if(exit){
+
+
+    function home(e){
+
+        e.preventDefault();
+
+        e.stopPropagation();
+
+        window.location.href="index.html";
+
+    }
+
+
+    exit.addEventListener("click",home);
+
+    exit.addEventListener("touchstart",home);
+
+
+}
+
+
+
+})();
+
+
+</script>
+
+
+</body>
+</html>

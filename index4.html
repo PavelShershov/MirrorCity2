@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimum-scale=1.0">
+  <title>Прокрутка с комментариями (about)</title>
+
+  <script src="js/preload.js"></script>  
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* Фиксация горизонтальной ориентации */
+    @supports (orientation: landscape) {
+      @media (orientation: portrait) {
+        html, body {
+          transform: rotate(-90deg);
+          transform-origin: top left;
+          position: fixed;
+          width: 100vh;
+          height: 100vw;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+        }
+      }
+    }
+
+    .scroll-container {
+      width: 100vw;
+      height: 100vh;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      white-space: nowrap;
+      position: relative;
+    }
+
+    .scroll-container img {
+      display: inline-block;
+      height: 100vh;
+      width: auto;
+      max-width: none;
+      user-select: none;
+      pointer-events: none;
+      vertical-align: top;
+      background-color: #fff;
+    }
+
+    .scroll-container::-webkit-scrollbar {
+      display: none;
+    }
+    .scroll-container {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .comment {
+      position: absolute;
+      cursor: pointer;
+      pointer-events: auto;
+      z-index: 10;
+      background-size: contain;
+      background-position: top center;
+      background-repeat: no-repeat;
+      transition: height 0.2s ease, width 0.2s ease;
+      transform-origin: top;
+    }
+    .comment:active {
+      transform: scale(0.95);
+    }
+
+    /* Стрелки */
+    .arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      height: 60px;
+      width: auto;
+    }
+    .arrow.hidden {
+      opacity: 0;
+    }
+    #leftArrow {
+      left: 10px;
+    }
+    #rightArrow {
+      right: 10px;
+    }
+
+    /* Кнопка Back */
+    #backBtn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 30;
+      cursor: pointer;
+      pointer-events: auto;
+      width: 100px;
+      height: auto;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    #backBtn:hover {
+      opacity: 1;
+    }
+    #backBtn:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="scroll-container" id="scrollContainer">
+    <img src="about/fon2.png" alt="Фон" id="bgImage">
+  </div>
+
+  <img id="leftArrow" class="arrow hidden" src="about/left1.png" alt="Влево">
+  <img id="rightArrow" class="arrow" src="about/right1.png" alt="Вправо">
+  <img id="backBtn" src="legend/back2.png" alt="Назад">
+
+  <script>
+    (function() {
+      const container = document.getElementById('scrollContainer');
+      const img = document.getElementById('bgImage');
+      const leftArrow = document.getElementById('leftArrow');
+      const rightArrow = document.getElementById('rightArrow');
+      const backBtn = document.getElementById('backBtn');
+
+      const aspectRatio = 13796 / 2421;
+      const originalWidth = 13796;
+
+      // ---- Настройки комментариев (4 штуки) ----
+      // x - в процентах от ширины изображения
+      const commentsConfig = [
+        { x: 8, id: 1 },   // 8% от левого края
+        { x: 38, id: 2 },  // 38% (равноудалено)
+        { x: 62, id: 3 },  // 62% (равноудалено)
+        { x: 88, id: 4 }   // 88% (СМЕЩЕНА ВЛЕВО, было 92%)
+      ];
+
+      const COLLAPSED_HEIGHT = 208;  /* БЫЛО 160 */
+      const COLLAPSED_WIDTH = 208;   /* БЫЛО 160 */
+      const EXPANDED_HEIGHT = 520;   /* БЫЛО 400 */
+      const EXPANDED_WIDTH = 208;    /* БЫЛО 160 */
+
+      let commentElements = [];
+      let resizeTimeout;
+      let lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+
+      // ---- Управление видимостью стрелок ----
+      function updateArrows() {
+        const scrollLeft = container.scrollLeft;
+        const maxScroll = container.scrollWidth - container.clientWidth;
+
+        if (scrollLeft <= 1) {
+          leftArrow.classList.add('hidden');
+        } else {
+          leftArrow.classList.remove('hidden');
+        }
+
+        if (maxScroll <= 1 || scrollLeft >= maxScroll - 1) {
+          rightArrow.classList.add('hidden');
+        } else {
+          rightArrow.classList.remove('hidden');
+        }
+      }
+
+      function setVerticalPosition(el, id, height) {
+        const containerHeight = container.clientHeight;
+        
+        delete el.dataset.topSet;
+        delete el.dataset.baseTop;
+        
+        if (id % 2 === 1) {
+          const centerY = containerHeight * 0.55;
+          const top = centerY - COLLAPSED_HEIGHT / 2;
+          el.style.top = top + 'px';
+          el.dataset.topSet = '1';
+          el.dataset.baseTop = top;
+          el.style.transform = 'none';
+        } else {
+          el.style.top = '20px';
+          el.style.transform = 'none';
+        }
+      }
+
+      // ---- Плашки ----
+      function renderComments(scale) {
+        commentElements.forEach(el => el.remove());
+        commentElements = [];
+
+        commentsConfig.forEach(cfg => {
+          const div = document.createElement('div');
+          div.className = 'comment';
+          div.dataset.id = cfg.id;
+          div.dataset.state = '0';
+
+          const leftPx = (originalWidth * (cfg.x / 100)) * scale;
+          div.style.left = leftPx + 'px';
+          div.style.height = COLLAPSED_HEIGHT + 'px';
+          div.style.width = COLLAPSED_WIDTH + 'px';
+          div.style.backgroundImage = `url('about/rus1/${cfg.id}s.png')`;
+
+          setVerticalPosition(div, cfg.id, COLLAPSED_HEIGHT);
+
+          div.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const currentState = this.dataset.state;
+            const newState = currentState === '0' ? '1' : '0';
+            this.dataset.state = newState;
+            const suffix = newState === '0' ? 's' : '';
+            this.style.backgroundImage = `url('about/rus1/${this.dataset.id}${suffix}.png')`;
+            
+            const newHeight = newState === '0' ? COLLAPSED_HEIGHT : EXPANDED_HEIGHT;
+            this.style.height = newHeight + 'px';
+            this.style.width = newState === '0' ? COLLAPSED_WIDTH : EXPANDED_WIDTH + 'px';
+            
+            setVerticalPosition(this, parseInt(this.dataset.id), newHeight);
+          });
+
+          container.appendChild(div);
+          commentElements.push(div);
+        });
+      }
+
+      function updateComments(scale) {
+        commentElements.forEach((el, index) => {
+          const cfg = commentsConfig[index];
+          if (cfg) {
+            const leftPx = (originalWidth * (cfg.x / 100)) * scale;
+            el.style.left = leftPx + 'px';
+          }
+        });
+      }
+
+      // ---- Основная настройка размеров ----
+      function adjustImageSize() {
+        if (!img || !container) return;
+
+        const currentOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+        
+        if (currentOrientation !== lastOrientation) {
+          lastOrientation = currentOrientation;
+        }
+
+        const containerHeight = container.clientHeight;
+        const naturalWidth = containerHeight * aspectRatio;
+        img.style.width = naturalWidth + 'px';
+        img.style.height = containerHeight + 'px';
+
+        const currentWidth = img.clientWidth;
+        const scale = currentWidth / originalWidth;
+        
+        if (commentElements.length === 0) {
+          renderComments(scale);
+        } else {
+          updateComments(scale);
+        }
+
+        setTimeout(updateArrows, 50);
+      }
+
+      // ---- Обработчик для кнопки Back ----
+      backBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        window.location.href = 'index2.html';
+      });
+      backBtn.addEventListener('touchstart', function(e) {
+        e.stopPropagation();
+        window.location.href = 'index2.html';
+      });
+
+      // ---- События ----
+      window.addEventListener('load', function() {
+        setTimeout(adjustImageSize, 100);
+      });
+
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+          adjustImageSize();
+          setTimeout(updateArrows, 100);
+        }, 150);
+      });
+
+      window.addEventListener('orientationchange', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+          adjustImageSize();
+          setTimeout(updateArrows, 200);
+        }, 300);
+      });
+
+      container.addEventListener('scroll', updateArrows);
+
+      setTimeout(updateArrows, 150);
+    })();
+  </script>
+
+</body>
+</html>
